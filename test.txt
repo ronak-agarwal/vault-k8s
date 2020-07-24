@@ -1,0 +1,105 @@
+
+————————
+https://www.vaultproject.io/docs/secrets/pki
+https://learn.hashicorp.com/nomad/vault-integration/vault-pki-nomad
+PKI - https://medium.com/hashicorp-engineering/pki-as-a-service-with-hashicorp-vault-a8d075ece9a
+
+https://medium.com/hashicorp-engineering/hashicorp-vault-delivering-secrets-with-kubernetes-1b358c03b2a3
+https://github.com/Andrew-Klaas/hashi-k8s-demo
+
+1. Create secret using > vault write kv
+2. Create policy for that secret > vault policy write (path of secret) (Eg - read, write capabilities etc)
+3. Create role to bind k8s SA, namespace and policy (which will be used by vault-agent for auth in HCL files)
+
+
+>>> /Users/ronagarw/vault/vault-guides/operations/provision-vault/kubernetes/minikube/getting-started
+
+vault write auth/kubernetes/config \
+        token_reviewer_jwt="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
+        kubernetes_host="https://kind-control-plane:6443" \
+        kubernetes_ca_cert=@/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+
+vault write auth/kubernetes/role/webapp \
+        bound_service_account_names=vault \
+        bound_service_account_namespaces=development \
+        policies=webapp \
+        ttl=24h
+
+
+>>> /Users/ronagarw/vault/vault-guides/identity/vault-agent-k8s-demo
+
+vault kv put secret/myapp/config username='appuser' \
+        password='suP3rsec(et!' \
+        keytab='BQIAAAAvAAEACU5XU0wuU0lURQALa2Fma2FjbGllbnQAAAABAAAAAAMAAQAI7LX+8c0mAa0AAAAvAAEACU5XU0wuU0lURQALa2Fma2FjbGllbnQAAAABAAAAAAMAAwAI7LX+8c0mAa0AAAA3AAEACU5XU0wuU0lURQALa2Fma2FjbGllbnQAAAABAAAAAAMAFwAQ3VCsjk6+otZ+d8kYRRRdNwAAAEcAAQAJTldTTC5TSVRFAAtrYWZrYWNsaWVudAAAAAEAAAAAAwASACDft2CCN67RRR/S6Dz3o1yKI+EHyhQRGSPacI0k89hUXwAAADcAAQAJTldTTC5TSVRFAAtrYWZrYWNsaWVudAAAAAEAAAAAAwARABAHWcqKb4RhG3+eWS5UPDQr' \
+        ttl='30s'
+
+https://www.katacoda.com/hashicorp/scenarios/vault-agent-templates
+
+https://www.nomadproject.io/docs/job-specification/template
+
+kubectl run alpine -i --tty --serviceaccount=vault --image alpine:3.7 -n development
+apk update
+apk add curl jq
+
+-------------------------
+TO unseal
+
+VAULT_UNSEAL_KEY=$(cat cluster-keys.json | jq -r ".unseal_keys_b64[]")
+kubectl exec vault-0 -- vault operator unseal $VAULT_UNSEAL_KEY
+kubectl exec vault-1 -- vault operator unseal $VAULT_UNSEAL_KEY
+kubectl exec vault-2 -- vault operator unseal $VAULT_UNSEAL_KEY
+cat cluster-keys.json | jq -r ".root_token"
+kubectl exec -it vault-0 -- /bin/sh
+vault login
+<token>
+-----------------------
+KV
+
+vault secrets enable -path=secret kv-v2
+
+vault kv put secret/myapp/config username='username' \
+        password='password' \
+        keytab='BQIAAAAvAAEACU5XU0wuU0lURQALa2Fma2FjbGllbnQAAAABAAAAAAMAAQAI7LX+8c0mAa0AAAAvAAEACU5XU0wuU0lURQALa2Fma2FjbGllbnQAAAABAAAAAAMAAwAI7LX+8c0mAa0AAAA3AAEACU5XU0wuU0lURQALa2Fma2FjbGllbnQAAAABAAAAAAMAFwAQ3VCsjk6+otZ+d8kYRRRdNwAAAEcAAQAJTldTTC5TSVRFAAtrYWZrYWNsaWVudAAAAAEAAAAAAwASACDft2CCN67RRR/S6Dz3o1yKI+EHyhQRGSPacI0k89hUXwAAADcAAQAJTldTTC5TSVRFAAtrYWZrYWNsaWVudAAAAAEAAAAAAwARABAHWcqKb4RhG3+eWS5UPDQr' \
+        ttl='30s'
+
+PKI
+vault secrets enable -path=intca pki
+vault secrets tune -max-lease-ttl=87600h intca
+
+Import Intermediate certificate
+vault write intca/config/ca pem_bundle=@bundle.pem
+
+
+vault write intca/config/urls \
+    issuing_certificates="http://vault:8200/v1/intca/ca" \
+    crl_distribution_points="http://vault:8200/v1/intca/crl"
+
+vault policy write myapp-kv-ro - <<EOF
+path "secret/data/myapp/*" {
+    capabilities = ["read", "list"]
+}
+path "intca/issue/example" {
+    capabilities = ["read", "list", "create", "update"]
+}
+EOF
+
+vault write intca/roles/example \
+  allow_any_name=true max_ttl=72h
+
+vault write intca/roles/example \
+    allowed_domains=["clients.alice.com","svc.cluster.local"] \
+    allow_subdomains=true max_ttl=72h
+
+AUTH
+vault auth enable kubernetes
+
+vault write auth/kubernetes/role/example \
+        bound_service_account_names=vault \
+        bound_service_account_namespaces=development \
+        policies=myapp-kv-ro \
+        ttl=24h
+
+
+vault write -field certificate intca/issue/example \
+    common_name=client-5.clients.alice.com alt_names=localhost \
+    format=pem_bundle > client-5.pem
