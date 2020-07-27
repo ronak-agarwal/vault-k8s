@@ -21,6 +21,7 @@ spec:
     - agent
     - -config=/etc/vault/vault-agent-config.hcl
     - -log-level=debug
+    - -exit-after-auth
     env:
     - name: VAULT_ADDR
       value: http://vault:8200
@@ -29,7 +30,7 @@ spec:
        fieldRef:
         fieldPath: status.podIP
     image: vault
-    name: vault-agent
+    name: vault-agent-init
     volumeMounts:
     - mountPath: /etc/vault
       name: config
@@ -37,6 +38,31 @@ spec:
       name: shared-data
 
   containers:
+  - image: vault
+    name: vault-agent
+    volumeMounts:
+    - mountPath: /etc/vault
+      name: config
+    - mountPath: /etc/secrets
+      name: shared-data
+    args:
+    - agent
+    - -config=/etc/vault/vault-agent-config.hcl
+    - -log-level=debug
+    env:
+    - name: VAULT_ADDR
+      value: http://vault:8200
+    - name: HOSTIP
+      valueFrom:
+       fieldRef:
+        fieldPath: status.podIP
+    lifecycle:
+      preStop:
+        exec:
+          command:
+          - /bin/sh
+          - -c
+            - sleep 5 && kill -SIGTERM $(pidof vault)
   - image: nginx
     name: nginx-container
     ports:

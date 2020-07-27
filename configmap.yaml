@@ -2,7 +2,7 @@ apiVersion: v1
 data:
   vault-agent-config.hcl: |
     # Comment this out if running as sidecar instead of initContainer
-    exit_after_auth = true
+    # exit_after_auth = true
 
     pid_file = "/home/vault/pidfile"
 
