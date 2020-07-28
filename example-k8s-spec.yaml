@@ -28,7 +28,7 @@ spec:
     - -exit-after-auth
     env:
     - name: SKIP_SETCAP
-      value: 'true'      
+      value: 'true'
     - name: VAULT_ADDR
       value: http://vault:8200
     - name: HOSTIP
@@ -44,6 +44,15 @@ spec:
       name: shared-data
     - mountPath: /home/vault
       name: vault-token
+  - image: nigredo/openssl-gost-java
+    name: openssl-init
+    command: ["sh", "-c"]
+    args:
+      - openssl pkcs12 -export -name cert -in /etc/secrets/client-4.pem -inkey /etc/secrets/private_key.key -nodes -CAfile /etc/secrets/ca_chain.pem -out /etc/secrets/keystore.p12 -passout pass:password;
+        keytool -importkeystore -destkeystore /etc/secrets/keystore.jks -deststorepass password -srckeystore /etc/secrets/keystore.p12 -srcstoretype PKCS12 -srcstorepass password;
+    volumeMounts:
+    - mountPath: /etc/secrets
+      name: shared-data
   containers:
   - image: vault
     name: vault-agent

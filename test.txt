@@ -1,9 +1,19 @@
 
 ————————
+https://gist.github.com/maxvt/bb49a6c7243163b8120625fc8ae3f3cd
+https://learn.hashicorp.com/vault/secrets-management/agent-caching
+https://github.com/hashicorp/vault/issues/8287
+https://github.com/kainlite/vault-kubernetes
+https://github.com/openlab-red/hashicorp-vault-for-openshift/tree/master/vault/agent/install
+https://www.openshift.com/blog/integrating-hashicorp-vault-in-openshift-4
+https://www.openshift.com/blog/vault-integration-using-kubernetes-authentication-method
+https://github.com/raffaelespazzoli/credscontroller
+
+https://github.com/sethvargo/vault-kubernetes-workshop/blob/master/k8s/kv-sidecar.yaml
 https://www.vaultproject.io/docs/secrets/pki
 https://learn.hashicorp.com/nomad/vault-integration/vault-pki-nomad
 PKI - https://medium.com/hashicorp-engineering/pki-as-a-service-with-hashicorp-vault-a8d075ece9a
-
+https://opencredo.com/blogs/securing-kafka-using-vault-pki/
 https://medium.com/hashicorp-engineering/hashicorp-vault-delivering-secrets-with-kubernetes-1b358c03b2a3
 https://github.com/Andrew-Klaas/hashi-k8s-demo
 

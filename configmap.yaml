@@ -55,6 +55,7 @@ data:
     destination = "/etc/secrets/kafka.keytab"
     }
 
+
     template {
     contents = <<EOH
     {{- $hostname := env "HOSTNAME" -}}
@@ -69,36 +70,35 @@ data:
     }
 
     template {
-        contents = <<EOH
-        {{- $hostname := env "HOSTNAME" -}}
-        {{- $hostip := env "HOSTIP" -}}
-        {{- $alt_arg := printf "alt_names=%s,%s.%s" $hostname $hostname "development.svc.cluster.local" -}}
-        {{- $ip_arg := printf "ip_sans=127.0.0.1,%s" $hostip -}}
-        {{ with secret "intca/issue/example" "common_name=client-4.clients.alice.com" "ttl=24h" $alt_arg $ip_arg }}
-        {{- .Data.private_key -}}
-        {{ end }}
-        EOH
-        destination = "/etc/secrets/private_key.key"
+    contents = <<EOH
+    {{- $hostname := env "HOSTNAME" -}}
+    {{- $hostip := env "HOSTIP" -}}
+    {{- $alt_arg := printf "alt_names=%s,%s.%s" $hostname $hostname "development.svc.cluster.local" -}}
+    {{- $ip_arg := printf "ip_sans=127.0.0.1,%s" $hostip -}}
+    {{ with secret "intca/issue/example" "common_name=client-4.clients.alice.com" "ttl=24h" $alt_arg $ip_arg }}
+    {{- .Data.private_key -}}
+    {{ end }}
+    EOH
+    destination = "/etc/secrets/private_key.key"
     }
-
 
     template {
-        contents = <<EOH
-        {{ with secret "intca/issue/example" "common_name=client-4.clients.alice.com" "ttl=24h" }}
-        {{- .Data.issuing_ca -}}
-        {{ end }}
-        EOH
-        destination = "/etc/secrets/intca.pem"
+    contents = <<EOH
+    {{ with secret "intca/issue/example" "common_name=client-4.clients.alice.com" "ttl=24h" }}
+    {{- .Data.issuing_ca -}}
+    {{ end }}
+    EOH
+    destination = "/etc/secrets/intca.pem"
     }
 
-     template {
-        contents = <<EOH
-        {{ with secret "intca/issue/example" "common_name=client-4.clients.alice.com" "ttl=24h" }}
-        {{ range $idx, $cert := .Data.ca_chain }}{{ $cert }}
-        {{ end }}
-        {{ end }}
-        EOH
-        destination = "/etc/secrets/ca_chain.pem"
+    template {
+    contents = <<EOH
+    {{ with secret "intca/issue/example" "common_name=client-4.clients.alice.com" "ttl=24h" }}
+    {{ range $idx, $cert := .Data.ca_chain }}{{ $cert }}
+    {{ end }}
+    {{ end }}
+    EOH
+    destination = "/etc/secrets/ca_chain.pem"
     }
 
 kind: ConfigMap
