@@ -34,11 +34,19 @@ data:
     <li><pre>keytab: {{ .Data.data.keytab }}</pre></li>
     </ul>
     {{ end }}
+
     {{ with secret "intca/issue/example" "common_name=client-4.clients.alice.com" }}
     <ul>
     <li><pre>clientCrt: {{ .Data.certificate }}</pre></li>
     <li><pre>clientKey: {{ .Data.private_key }}</pre></li>
     <li><pre>CA chain: {{ .Data.ca_chain }}</pre></li>
+    </ul>
+    {{ end }}
+
+    {{ with secret "database/creds/fruit-catalog-role" }}
+    <ul>
+    <li><pre>Mongo username: {{ .Data.username }}</pre></li>
+    <li><pre>Mongo password: {{ .Data.password }}</pre></li>
     </ul>
     {{ end }}
     </body>

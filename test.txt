@@ -91,6 +91,15 @@ path "secret/data/myapp/*" {
 path "intca/issue/example" {
     capabilities = ["read", "list", "create", "update"]
 }
+path "database/creds/fruit-catalog-role" {
+  capabilities = ["read"]
+}
+path "sys/leases/renew" {
+  capabilities = ["create"]
+}
+path "sys/leases/revoke" {
+  capabilities = ["update"]
+}
 EOF
 
 vault write intca/roles/example \
@@ -113,3 +122,39 @@ vault write auth/kubernetes/role/example \
 vault write -field certificate intca/issue/example \
     common_name=client-5.clients.alice.com alt_names=localhost \
     format=pem_bundle > client-5.pem
+
+
+## - To generate DB username and password on the fly
+Extend Secret Engine to DB (Eg Mongo)
+
+vault secrets enable -tls-skip-verify database
+
+vault write -tls-skip-verify database/config/fruit-catalog-mongodb \
+   plugin_name=mongodb-database-plugin \
+   allowed_roles="fruit-catalog-role" \
+   connection_url="mongodb://{{username}}:{{password}}@mongodb.development.svc.cluster.local:27017/admin" \
+   username="admin" \
+   password="YiwThWIcUsaIwymi"
+
+   vault write -tls-skip-verify database/roles/fruit-catalog-role \
+      db_name=fruit-catalog-mongodb \
+      creation_statements='{ "db": "sampledb", "roles": [{"role": "readWrite", "db": "sampledb"}] }' \
+      default_ttl="1h" \
+      max_ttl="24h" \
+      revocation_statements='{ "db": "sampledb" }'
+
+
+## To enable mTLS between example nginx App and Mongo
+//Manual istio-proxy inject, without mutating webhook//
+//Assuming you have istio running in istio-system namespace
+
+1. kubectl -n istio-system get configmap istio-sidecar-injector -o=jsonpath='{.data.config}' > inject-config.yaml
+2. kubectl -n istio-system get configmap istio-sidecar-injector -o=jsonpath='{.data.values}' > inject-values.yaml
+3. kubectl -n istio-system get configmap istio -o=jsonpath='{.data.mesh}' > mesh-config.yaml
+
+4.               istioctl kube-inject \
+                   --injectConfigFile inject-config.yaml \
+                   --meshConfigFile mesh-config.yaml \
+                   --valuesFile inject-values.yaml \
+                   --filename /Users/ronagarw/vault/secured-fruits-catalog-k8s/k8s/mongodb-deployment.yml \
+                   | kubectl apply -f -
