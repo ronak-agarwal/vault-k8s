@@ -158,3 +158,11 @@ vault write -tls-skip-verify database/config/fruit-catalog-mongodb \
                    --valuesFile inject-values.yaml \
                    --filename /Users/ronagarw/vault/secured-fruits-catalog-k8s/k8s/mongodb-deployment.yml \
                    | kubectl apply -f -
+
+
+                   istioctl kube-inject \
+                                      --injectConfigFile inject-config.yaml \
+                                      --meshConfigFile mesh-config.yaml \
+                                      --valuesFile inject-values.yaml \
+                                      --filename /Users/ronagarw/vault/vault-guides/identity/vault-agent-k8s-demo/example-k8s-spec.yaml \
+                                      | kubectl apply -f -
