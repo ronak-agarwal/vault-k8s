@@ -1,0 +1,113 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vault-agent-example
+  namespace: development
+spec:
+  strategy:
+    type: Recreate
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx-container
+  template:
+    metadata:
+      labels:
+        app: nginx-container
+    spec:
+      serviceAccountName: vault
+
+      volumes:
+      - configMap:
+          items:
+          - key: vault-agent-config.hcl
+            path: vault-agent-config.hcl
+          name: example-vault-agent-config
+        name: config
+      - configMap:
+          items:
+          - key: default.conf
+            path: default.conf
+          name: nginx
+        name: nginx-config
+      - name: vault-token
+        emptyDir:
+          medium: Memory
+      - emptyDir:
+          medium: Memory
+        name: shared-data
+
+      initContainers:
+      - args:
+        - agent
+        - -config=/etc/vault/vault-agent-config.hcl
+        - -log-level=debug
+        - -exit-after-auth
+        env:
+        - name: SKIP_SETCAP
+          value: 'true'
+        - name: VAULT_ADDR
+          value: http://vault:8200
+        - name: HOSTIP
+          valueFrom:
+           fieldRef:
+            fieldPath: status.podIP
+        image: vault
+        name: vault-agent-init
+        volumeMounts:
+        - mountPath: /etc/vault
+          name: config
+        - mountPath: /etc/secrets
+          name: shared-data
+        - mountPath: /home/vault
+          name: vault-token
+      - image: nigredo/openssl-gost-java
+        name: openssl-init
+        command: ["sh", "-c"]
+        args:
+          - openssl pkcs12 -export -name cert -in /etc/secrets/server.crt -inkey /etc/secrets/server.key -nodes -CAfile /etc/secrets/ca.crt -out /etc/secrets/keystore.p12 -passout pass:password;
+            keytool -importkeystore -destkeystore /etc/secrets/keystore.jks -deststorepass password -srckeystore /etc/secrets/keystore.p12 -srcstoretype PKCS12 -srcstorepass password;
+        volumeMounts:
+        - mountPath: /etc/secrets
+          name: shared-data
+      containers:
+      - image: vault
+        name: vault-agent
+        volumeMounts:
+        - mountPath: /etc/vault
+          name: config
+        - mountPath: /etc/secrets
+          name: shared-data
+        - mountPath: /home/vault
+          name: vault-token
+        args:
+        - agent
+        - -config=/etc/vault/vault-agent-config.hcl
+        - -log-level=debug
+        env:
+        - name: SKIP_SETCAP
+          value: 'true'
+        - name: VAULT_ADDR
+          value: http://vault:8200
+        - name: HOSTIP
+          valueFrom:
+           fieldRef:
+            fieldPath: status.podIP
+        lifecycle:
+          preStop:
+            exec:
+              command:
+              - /bin/sh
+              - -c
+                - sleep 5 && kill -SIGTERM $(pidof vault)
+      - image: nginx
+        name: nginx-container
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - mountPath: /usr/share/nginx/html
+          name: shared-data
+        - mountPath: /etc/nginx/conf.d/certs
+          name: shared-data
+        - mountPath: /etc/nginx/conf.d
+          name: nginx-config

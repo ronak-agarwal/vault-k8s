@@ -166,3 +166,9 @@ vault write -tls-skip-verify database/config/fruit-catalog-mongodb \
                                       --valuesFile inject-values.yaml \
                                       --filename /Users/ronagarw/vault/vault-guides/identity/vault-agent-k8s-demo/example-k8s-spec.yaml \
                                       | kubectl apply -f -
+
+
+
+### Nginx mutualTLS
+Generated client-1 certs from vault and using below curl able to test mTLS
+curl https://client-4.clients.alice.com:8080 -vvv --cacert ca.crt --cert client.crt --key client.key
