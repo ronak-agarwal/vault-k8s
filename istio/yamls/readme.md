@@ -62,3 +62,8 @@ Kiali dashboard
 
 
 9. TODO - RequestAuthentication by introducing JWT token service via oAuth / OIDC using Microsoft AD server
+
+10. TODO - Try Mutual TLS (instead of PASSTHROUGH) between client and ingressgateway by using vault to issue server certs
+privateKey: /etc/istio/ingressgateway-certs/tls.key
+serverCertificate: /etc/istio/ingressgateway-certs/tls.crt
+caCertificates: /etc/istio/ingressgateway-ca-certs/ca-chain.crt
