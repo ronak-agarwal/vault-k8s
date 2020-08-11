@@ -1,0 +1,11 @@
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: nginx-development
+  namespace: development
+spec:
+  selector:
+    matchLabels:
+      app: nginx-container
+  mtls:
+    mode: STRICT

@@ -120,8 +120,8 @@ vault write auth/kubernetes/role/example \
 
 
 vault write -field certificate intca/issue/example \
-    common_name=client-5.clients.alice.com alt_names=localhost \
-    format=pem_bundle > client-5.pem
+    common_name=client-1.clients.alice.com alt_names=localhost \
+    format=pem_bundle > client-1.pem
 
 
 ## - To generate DB username and password on the fly
@@ -152,23 +152,32 @@ vault write -tls-skip-verify database/config/fruit-catalog-mongodb \
 2. kubectl -n istio-system get configmap istio-sidecar-injector -o=jsonpath='{.data.values}' > inject-values.yaml
 3. kubectl -n istio-system get configmap istio -o=jsonpath='{.data.mesh}' > mesh-config.yaml
 
-4.               istioctl kube-inject \
-                   --injectConfigFile inject-config.yaml \
-                   --meshConfigFile mesh-config.yaml \
-                   --valuesFile inject-values.yaml \
-                   --filename /Users/ronagarw/vault/secured-fruits-catalog-k8s/k8s/mongodb-deployment.yml \
-                   | kubectl apply -f -
+istioctl kube-inject \
+--injectConfigFile inject-config.yaml \
+--meshConfigFile mesh-config.yaml \
+--valuesFile inject-values.yaml \
+--filename /Users/ronagarw/vault/secured-fruits-catalog-k8s/k8s/mongodb-deployment.yml \
+| kubectl apply -f -
 
 
-                   istioctl kube-inject \
-                                      --injectConfigFile inject-config.yaml \
-                                      --meshConfigFile mesh-config.yaml \
-                                      --valuesFile inject-values.yaml \
-                                      --filename /Users/ronagarw/vault/vault-guides/identity/vault-agent-k8s-demo/example-k8s-spec.yaml \
-                                      | kubectl apply -f -
+istioctl kube-inject \
+--injectConfigFile inject-config.yaml \
+--meshConfigFile mesh-config.yaml \
+--valuesFile inject-values.yaml \
+--filename /Users/ronagarw/vault/vault-guides/identity/vault-agent-k8s-demo/example-k8s-spec.yaml \
+| kubectl apply -f -
+
+istioctl kube-inject \
+--injectConfigFile inject-config.yaml \
+--meshConfigFile mesh-config.yaml \
+--valuesFile inject-values.yaml \
+--filename /Users/ronagarw/vault/vault-guides/identity/vault-agent-k8s-demo/samples/inventory.yaml \
+| kubectl apply -f -
 
 
-
-### Nginx mutualTLS
-Generated client-1 certs from vault and using below curl able to test mTLS
-curl https://client-4.clients.alice.com:8080 -vvv --cacert ca.crt --cert client.crt --key client.key
+istioctl kube-inject \
+--injectConfigFile inject-config.yaml \
+--meshConfigFile mesh-config.yaml \
+--valuesFile inject-values.yaml \
+--filename /Users/ronagarw/vault/vault-guides/identity/vault-agent-k8s-demo/samples/orders.yaml \
+| kubectl apply -f -
