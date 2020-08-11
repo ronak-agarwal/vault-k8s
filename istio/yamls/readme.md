@@ -61,9 +61,13 @@ Kiali dashboard
 [![Screen-Shot-2020-08-11-at-14-49-59.png](https://i.postimg.cc/Z5ZZZGjD/Screen-Shot-2020-08-11-at-14-49-59.png)](https://postimg.cc/6yHFf1kd)
 
 
-9. TODO - RequestAuthentication by introducing JWT token service via oAuth / OIDC using Microsoft AD server
-
-10. TODO - Try Mutual TLS (instead of PASSTHROUGH) between client and ingressgateway by using vault to issue server certs
+9. TODO - Try Mutual TLS (instead of PASSTHROUGH) between client and ingressgateway by using vault to issue server certs
 privateKey: /etc/istio/ingressgateway-certs/tls.key
 serverCertificate: /etc/istio/ingressgateway-certs/tls.crt
 caCertificates: /etc/istio/ingressgateway-ca-certs/ca-chain.crt
+
+-- Below will use oAuth Bearer Token --
+
+10. TODO - RequestAuthentication on ingressgateway by introducing JWT token service via oAuth / OIDC using Microsoft AD server  
+
+11. TODO - RequestAuthentication on nginx app by introducing JWT token service via oAuth / OIDC using Microsoft AD server
