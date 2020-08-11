@@ -27,7 +27,7 @@ istioctl kube-inject \
 You should get the server.crt and key at /usr/share/nginx/html/ in nginx pod (fetched from Vault)
 
 4. We will use istio ingress gateway to get the traffic inside k8s nginx pod
-- create a nginx istio gateway (ingress-gateway-https.yaml) in PASSTHROUGH mode
+- create a nginx istio gateway (ingress-gateway-https.yaml) in PASSTHROUGH mode (works like HAproxy, and we can rencrypt traffic by adding gateway certs here)
 
 - create a nginx istio virtual service (nginx-virtualservice.yaml), to map istio gateway with k8s nginx service
 
@@ -59,3 +59,6 @@ curl https://client-4.clients.alice.com:31308 -vvv --cacert ca.crt --cert client
 Kiali dashboard
 
 [![Screen-Shot-2020-08-11-at-14-49-59.png](https://i.postimg.cc/Z5ZZZGjD/Screen-Shot-2020-08-11-at-14-49-59.png)](https://postimg.cc/6yHFf1kd)
+
+
+9. TODO - RequestAuthentication by introducing JWT token service via oAuth / OIDC using Microsoft AD server
