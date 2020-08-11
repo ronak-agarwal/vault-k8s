@@ -1,4 +1,4 @@
-## To enable mTLS between example nginx App and Mongo
+## To enable mTLS between example nginx App (server) and client using curl
 //Manual istio-proxy inject, without mutating webhook//
 //Assuming you have istio running in istio-system namespace
 
