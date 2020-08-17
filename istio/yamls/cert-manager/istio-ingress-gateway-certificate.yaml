@@ -1,0 +1,14 @@
+apiVersion: cert-manager.io/v1alpha2
+kind: Certificate
+metadata:
+  name: nginxapp
+  namespace: istio-system
+spec:
+  secretName: nginxapptls
+  issuerRef:
+    name: vault-issuer-istio
+    kind: Issuer
+  commonName: client-4.clients.alice.com
+  dnsNames:
+    - client-4.clients.alice.com
+    - nginx-service.development.svc.cluster.local

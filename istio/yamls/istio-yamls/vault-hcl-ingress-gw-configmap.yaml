@@ -1,0 +1,72 @@
+apiVersion: v1
+data:
+  vault-agent-config.hcl: |
+    # Comment this out if running as sidecar instead of initContainer
+    # exit_after_auth = true
+
+    pid_file = "/home/vault/pidfile"
+
+    auto_auth {
+        method "kubernetes" {
+            mount_path = "auth/kubernetes"
+            config = {
+                role = "example"
+            }
+        }
+
+        sink "file" {
+            config = {
+                path = "/home/vault/.vault-token"
+            }
+        }
+    }
+
+    template {
+    contents = <<EOH
+    {{- $hostname := env "HOSTNAME" -}}
+    {{- $hostip := env "HOSTIP" -}}
+    {{- $alt_arg := printf "alt_names=%s,%s,%s,%s" "istio-ingressgateway.istio-system" "istio-ingressgateway.istio-system.svc" "istio-ingressgateway.istio-system.svc.cluster" "istio-ingressgateway.istio-system.svc.cluster.local" -}}
+    {{- $ip_arg := printf "ip_sans=127.0.0.1,%s" $hostip -}}
+    {{ with secret "intca/issue/example" "common_name=client-1.clients.alice.com" "ttl=24h" $alt_arg $ip_arg }}
+    {{- .Data.certificate -}}
+    {{ end }}
+    EOH
+    destination = "/etc/secrets/tls.crt"
+    }
+
+    template {
+    contents = <<EOH
+    {{- $hostname := env "HOSTNAME" -}}
+    {{- $hostip := env "HOSTIP" -}}
+    {{- $alt_arg := printf "alt_names=%s,%s,%s,%s" "istio-ingressgateway.istio-system" "istio-ingressgateway.istio-system.svc" "istio-ingressgateway.istio-system.svc.cluster" "istio-ingressgateway.istio-system.svc.cluster.local" -}}
+    {{- $ip_arg := printf "ip_sans=127.0.0.1,%s" $hostip -}}
+    {{ with secret "intca/issue/example" "common_name=client-1.clients.alice.com" "ttl=24h" $alt_arg $ip_arg }}
+    {{- .Data.private_key -}}
+    {{ end }}
+    EOH
+    destination = "/etc/secrets/tls.key"
+    }
+
+    template {
+    contents = <<EOH
+    {{ with secret "intca/issue/example" "common_name=istio-ingressgateway.istio-system.svc.cluster.local" "ttl=24h" }}
+    {{- .Data.issuing_ca -}}
+    {{ end }}
+    EOH
+    destination = "/etc/secrets/issue_ca.crt"
+    }
+
+    template {
+    contents = <<EOH
+    {{ with secret "intca/issue/example" "common_name=client-1.clients.alice.com" "ttl=24h" }}
+    {{ range $idx, $cert := .Data.ca_chain }}{{ $cert }}
+    {{ end }}
+    {{ end }}
+    EOH
+    destination = "/etc/secrets/ca-chain.crt"
+    }
+
+kind: ConfigMap
+metadata:
+  name: istio-ingress-vault-config
+  namespace: istio-system

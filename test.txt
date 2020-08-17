@@ -100,6 +100,10 @@ path "sys/leases/renew" {
 path "sys/leases/revoke" {
   capabilities = ["update"]
 }
+path "intca*"                { capabilities = ["read", "list"] }
+path "intca/roles/example"   { capabilities = ["create", "update"] }
+path "intca/sign/example"    { capabilities = ["create", "update"] }
+path "intca/issue/example"   { capabilities = ["create"] }
 EOF
 
 vault write intca/roles/example \
