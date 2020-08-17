@@ -108,7 +108,7 @@ https://github.com/lbroudoux/secured-fruits-catalog-k8s/blob/master/k8s/mongodb-
 https://archive.istio.io/v1.5/pt-br/docs/tasks/traffic-management/ingress/secure-ingress-mount/
 
 
-9. TODO - Try Mutual TLS (instead of PASSTHROUGH) between client and ingressgateway by using vault to issue server certs
+9. TODO - Try Rencrypt Mutual TLS (instead of PASSTHROUGH) between client and ingressgateway by using vault to issue server certs
 
 Gateway Server certs
 ```hcl
