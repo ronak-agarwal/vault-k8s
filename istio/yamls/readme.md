@@ -110,10 +110,51 @@ https://archive.istio.io/v1.5/pt-br/docs/tasks/traffic-management/ingress/secure
 
 9. TODO - Try Mutual TLS (instead of PASSTHROUGH) between client and ingressgateway by using vault to issue server certs
 
+Server
 ```hcl
-privateKey: /etc/istio/ingressgateway-certs/tls.key
-serverCertificate: /etc/istio/ingressgateway-certs/tls.crt
-caCertificates: /etc/istio/ingressgateway-ca-certs/ca-chain.crt
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  namespace: istio-system
+  name: nginx-gateway
+spec:
+  selector:
+    istio: ingressgateway # use istio default controller
+  servers:
+  - port:
+      number: 443
+      name: https
+      protocol: https
+    tls:
+      mode: MUTUAL # enables HTTPS on this port
+      serverCertificate: /etc/istio/ingressgateway-certs/tls.crt
+      privateKey: /etc/istio/ingressgateway-certs/tls.key
+      caCertificates: /etc/istio/ingressgateway-ca-certs/ca-chain.crt
+    hosts:
+    - "*"
+
+```
+
+Client
+```hcl
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: nginx-mtls
+  namespace: development
+spec:
+  host: nginx-service.development.svc.cluster.local
+  trafficPolicy:
+    tls:
+      mode: MUTUAL
+      clientCertificate: /etc/istio/ingressgateway-certs/tls.crt
+      privateKey: /etc/istio/ingressgateway-certs/tls.key
+      caCertificates: /etc/istio/ingressgateway-ca-certs/ca-chain.crt
+    portLevelSettings:
+    - port:
+        number: 8000
+      loadBalancer:
+        simple: ROUND_ROBIN
 ```
 
 This will terminate TLS at gateway and rencrypt with client certs to talk to backend service over tls (need DestinationRule for backend service)
