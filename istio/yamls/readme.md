@@ -16,13 +16,15 @@ Deploy nginx app using Vault for PKI and Istio for mTLS
 3. nginx deployment (example-k8s-spec.yaml) using below command
 
 :Inject envoy proxy manually
-
+```hcl
 istioctl kube-inject \
 --injectConfigFile inject/inject-config.yaml \
 --meshConfigFile inject/mesh-config.yaml \
 --valuesFile inject/inject-values.yaml \
 --filename example-k8s-spec.yaml \
 | kubectl apply -f -
+
+```
 
 You should get the server.crt and key at /usr/share/nginx/html/ in nginx pod (fetched from Vault)
 
@@ -45,9 +47,11 @@ kubectl port-forward pod/kiali-d45468dc4-42shk -n ist-system 8001:20001
 
 cd /home/vault
 
+```hcl
 vault write -field certificate intca/issue/example \
     common_name=client-1.clients.alice.com alt_names=localhost \
     format=pem_bundle > client-1.pem
+```
 
 copy client-1.pem to your local laptop and run below curl to test mTLS
 
@@ -76,37 +80,51 @@ c) create ingressgateway certificate yaml (see - )
 
 On Vault add following in policy and service-account association in issuer (Permissions)
 
+```hcl
 path "intca*"                { capabilities = ["read", "list"] }
 path "intca/roles/example"   { capabilities = ["create", "update"] }
 path "intca/sign/example"    { capabilities = ["create", "update"] }
 path "intca/issue/example"   { capabilities = ["create", "update", "read", "list"] }
+```
 
-
+```hcl
 vault write auth/kubernetes/role/example \
 bound_service_account_names=vault,istio-ingressgateway-service-account \
 bound_service_account_namespaces=development,istio-system \
 policies=myapp-kv-ro \
 ttl=24h
+```
 
 https://software.danielwatrous.com/istio-ingress-vs-kubernetes-ingress/
+
 https://www.openshift.com/blog/self-serviced-end-to-end-encryption-approaches-for-applications-deployed-in-openshift
+
 https://developers.redhat.com/blog/2017/11/22/dynamically-creating-java-keystores-openshift/
+
 https://itnext.io/adding-security-layers-to-your-app-on-openshift-part-6-pki-as-a-service-with-vault-and-cert-e6dbbe7028c7
+
 https://github.com/lbroudoux/secured-fruits-catalog-k8s/blob/master/k8s/mongodb-istio-virtualservice.yml
+
 https://archive.istio.io/v1.5/pt-br/docs/tasks/traffic-management/ingress/secure-ingress-mount/
+
 
 9. TODO - Try Mutual TLS (instead of PASSTHROUGH) between client and ingressgateway by using vault to issue server certs
 
+```hcl
 privateKey: /etc/istio/ingressgateway-certs/tls.key
 serverCertificate: /etc/istio/ingressgateway-certs/tls.crt
 caCertificates: /etc/istio/ingressgateway-ca-certs/ca-chain.crt
+```
 
 This will terminate TLS at gateway and rencrypt with client certs to talk to backend service over tls (need DestinationRule for backend service)
 
+```hcl
 outside-client > ingress-Gateway (server and client certs) > Backend K8S service
             (Terminate)                    (Rencrypt using client certs)
+```
 
 For above we can directly use Vault agent (without cert-manager), but that will require to add Vault-agent as init/sidecar to istio ingress-gateway (sample istio-ingress.yaml)
+
 
 -- Below will use oAuth Bearer Token --
 
