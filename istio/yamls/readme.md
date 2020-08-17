@@ -110,7 +110,7 @@ https://archive.istio.io/v1.5/pt-br/docs/tasks/traffic-management/ingress/secure
 
 9. TODO - Try Mutual TLS (instead of PASSTHROUGH) between client and ingressgateway by using vault to issue server certs
 
-Server
+Gateway Server certs
 ```hcl
 apiVersion: networking.istio.io/v1alpha3
 kind: Gateway
@@ -135,7 +135,7 @@ spec:
 
 ```
 
-Client
+Gateway Client certs
 ```hcl
 apiVersion: networking.istio.io/v1alpha3
 kind: DestinationRule
